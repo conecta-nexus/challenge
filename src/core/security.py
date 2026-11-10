@@ -48,6 +48,11 @@ class AuthenticatedUser:
     is_active: bool = True
     payload: dict[str, Any] = field(default_factory=dict, repr=False)
 
+    @property
+    def user_id(self) -> uuid.UUID:
+        """Alias for id attribute for consistency across services."""
+        return self.id
+
     def has_role(self, role: str) -> bool:
         """Check if the user has the specified role (case-insensitive)."""
         return self.role.upper() == role.strip().upper()

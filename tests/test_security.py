@@ -285,6 +285,7 @@ def test_get_token_user_success(rsa_keypair: tuple[str, str], generate_token):
 
     user = get_token_user(token, public_key=public_pem)
     assert user.id == expected_id
+    assert user.user_id == expected_id
     assert user.role == "STUDENT"
     assert user.email == "student@ufps.edu.co"
     assert user.scopes == ["challenge:read", "application:create"]
