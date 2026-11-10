@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from src.core.config import settings
 from src.core.database import Base
-from src.models.challenge import Challenge  # noqa: F401
+from src.models import Challenge, ChallengeAttachment  # noqa: F401
 
 config = context.config
 
