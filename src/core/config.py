@@ -20,6 +20,16 @@ class Settings(BaseSettings):
     db_echo: bool = False
     app_env: str = "development"
 
+    # JWT Cryptographic & OAuth2 Specifications (ADR-002)
+    jwt_public_key_path: str = "certs/jwt_public.pem"
+    jwt_public_key: str | None = None
+    jwt_algorithm: str = "RS256"
+    jwt_issuer: str = "https://auth.conectanexus.ufps.edu.co"
+    jwt_audiences: list[str] = [
+        "conecta-nexus-gateway",
+        "conecta-nexus-services",
+    ]
+
     @field_validator("database_url", mode="after")
     @classmethod
     def assemble_db_connection(cls, v: str) -> str:
