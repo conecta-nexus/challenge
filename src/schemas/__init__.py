@@ -1,6 +1,12 @@
 """Schemas package initialization."""
 
-from src.schemas.catalog import EmptyStateMetadata, PaginatedCatalogResponse
+from src.schemas.catalog import (
+    ChallengeCatalogDetailResponse,
+    ChallengeCatalogItemResponse,
+    CatalogAttachmentResponse,
+    EmptyStateMetadata,
+    PaginatedCatalogResponse,
+)
 from src.schemas.challenge import (
     ChallengeCreate,
     ChallengeResponse,
@@ -9,6 +15,9 @@ from src.schemas.challenge import (
 
 __all__ = [
     "ChallengeCreate",
+    "ChallengeCatalogDetailResponse",
+    "ChallengeCatalogItemResponse",
+    "CatalogAttachmentResponse",
     "ChallengeResponse",
     "ChallengeUpdate",
     "EmptyStateMetadata",

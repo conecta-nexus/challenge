@@ -1,13 +1,21 @@
 """Catalog router providing public opportunity browsing, multi-criteria filtering, and empty-state metadata (HU-09, HU-10)."""
 
 from typing import Annotated, Any
-from fastapi import APIRouter, Depends, Query
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
 from src.repositories.catalog_repository import CatalogRepository
-from src.schemas.catalog import EmptyStateMetadata, PaginatedCatalogResponse
+from src.schemas.catalog import (
+    ChallengeCatalogDetailResponse,
+    EmptyStateMetadata,
+    PaginatedCatalogResponse,
+)
 from src.schemas.challenge import DifficultyLevel, Modality
+from src.services.catalog_service import CatalogChallengeNotFoundError, CatalogService
+from src.services.storage_service import StorageServiceError
 
 router = APIRouter(
     prefix="/challenges",
@@ -56,7 +64,7 @@ async def get_catalog(
     # Calculate pagination offset
     skip = (page - 1) * effective_limit
 
-    items, total = await CatalogRepository.filter_catalog(
+    items, total = await CatalogService.query_catalog(
         db,
         q=effective_q,
         economic_sector=effective_sector,
@@ -67,7 +75,6 @@ async def get_catalog(
         knowledge_area=knowledge_area,
         knowledge_areas=knowledge_areas,
         min_semester=effective_semester,
-        status="OPEN",
         skip=skip,
         limit=effective_limit,
     )
@@ -111,3 +118,31 @@ async def get_catalog(
         pages=pages,
         empty_state=empty_state,
     )
+
+
+@router.get(
+    "/catalog/{challenge_id}",
+    response_model=ChallengeCatalogDetailResponse,
+    summary="Get public challenge details",
+    responses={
+        404: {"description": "Open challenge not found"},
+        503: {"description": "Attachment storage unavailable"},
+    },
+)
+async def get_catalog_detail(
+    challenge_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> ChallengeCatalogDetailResponse:
+    """Return an open challenge and ephemeral attachment download URLs."""
+    try:
+        return await CatalogService.get_catalog_detail(db, challenge_id)
+    except CatalogChallengeNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Open challenge not found",
+        ) from exc
+    except StorageServiceError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Attachment storage is temporarily unavailable",
+        ) from exc
