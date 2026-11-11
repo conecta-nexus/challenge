@@ -134,12 +134,23 @@ class Challenge(Base):
         server_default=func.now(),
     )
 
+    @property
+    def closure_reason(self) -> str | None:
+        """Voluntary closure audit reason, if challenge is closed."""
+        return getattr(self, "_closure_reason", None)
+
+    @closure_reason.setter
+    def closure_reason(self, value: str | None) -> None:
+        self._closure_reason = value
+
     def __init__(self, **kwargs: Any) -> None:
         """Initialize Challenge model instance with default ORM values."""
         kwargs.setdefault("status", "DRAFT")
         kwargs.setdefault("min_semester", 6)
+        closure_reason = kwargs.pop("closure_reason", None)
         if "required_skills" not in kwargs or kwargs["required_skills"] is None:
             kwargs["required_skills"] = []
         if "knowledge_areas" not in kwargs or kwargs["knowledge_areas"] is None:
             kwargs["knowledge_areas"] = []
         super().__init__(**kwargs)
+        self.closure_reason = closure_reason
