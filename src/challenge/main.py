@@ -10,6 +10,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from src.core.storage import initialize_storage, shutdown_storage
+from src.routers.attachments import router as attachments_router
 from src.routers.catalog import router as catalog_router
 from src.routers.challenges import router as challenges_router
 
@@ -35,6 +36,7 @@ app.include_router(catalog_router, prefix="/api/v1")
 app.include_router(catalog_router)
 app.include_router(challenges_router, prefix="/api/v1")
 app.include_router(challenges_router)
+app.include_router(attachments_router, prefix="/api/v1")
 
 
 @app.get("/")
