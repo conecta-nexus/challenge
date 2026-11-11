@@ -11,6 +11,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from src.core.storage import initialize_storage, shutdown_storage
 from src.routers.catalog import router as catalog_router
+from src.routers.challenges import router as challenges_router
 
 
 @asynccontextmanager
@@ -29,9 +30,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Mount catalog router under API v1 prefix and root alias for flexible routing
+# Mount routers under API v1 prefix and root alias for flexible routing
 app.include_router(catalog_router, prefix="/api/v1")
 app.include_router(catalog_router)
+app.include_router(challenges_router, prefix="/api/v1")
+app.include_router(challenges_router)
 
 
 @app.get("/")
