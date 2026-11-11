@@ -30,6 +30,19 @@ class ChallengeCatalogItemResponse(PublicCatalogChallengeBase):
     description_snippet: str
 
 
+class CatalogAttachmentResponse(BaseModel):
+    """Read-only public attachment metadata with an ephemeral download URL."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    id: UUID
+    file_name: str
+    file_size_bytes: int
+    mime_type: str
+    download_url: str
+    created_at: datetime
+
+
 class ChallengeCatalogDetailResponse(PublicCatalogChallengeBase):
     """Privacy-safe public detail projection for an open challenge."""
 
@@ -37,6 +50,7 @@ class ChallengeCatalogDetailResponse(PublicCatalogChallengeBase):
     business_process: str
     status: Literal["OPEN"]
     updated_at: datetime
+    attachments: list[CatalogAttachmentResponse] = Field(default_factory=list)
 
 
 class EmptyStateMetadata(BaseModel):
