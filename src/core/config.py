@@ -20,6 +20,16 @@ class Settings(BaseSettings):
     db_echo: bool = False
     app_env: str = "development"
 
+    # JWT Cryptographic & OAuth2 Specifications (ADR-002)
+    jwt_public_key_path: str = "certs/jwt_public.pem"
+    jwt_public_key: str | None = None
+    jwt_algorithm: str = "RS256"
+    jwt_issuer: str = "https://auth.conectanexus.ufps.edu.co"
+    jwt_audiences: list[str] = [
+        "conecta-nexus-gateway",
+        "conecta-nexus-services",
+    ]
+
     storage_endpoint: str = "localhost:9000"
     storage_access_key: str = "conectaadmin"
     storage_secret_key: str = "change-this-storage-secret"

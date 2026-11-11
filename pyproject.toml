@@ -8,6 +8,7 @@ dependencies = [
     "fastapi[standard]>=0.146.0",
     "minio>=7.2,<8.0",
     "pydantic-settings>=2.16.0",
+    "pyjwt[crypto]>=2.10.1",
     "sqlalchemy[asyncio]>=2.1.6",
     "urllib3>=2.0,<3.0",
 ]
