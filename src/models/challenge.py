@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import (
     CheckConstraint,
+    Index,
     Integer,
     String,
     Text,
@@ -40,6 +41,24 @@ class Challenge(Base):
             "min_semester BETWEEN 6 AND 10",
             name="ck_challenges_min_semester",
         ),
+        # GIN Indexes for JSONB filtering (ADR-002, HU-10)
+        Index(
+            "ix_challenges_required_skills_gin",
+            "required_skills",
+            postgresql_using="gin",
+        ),
+        Index(
+            "ix_challenges_knowledge_areas_gin",
+            "knowledge_areas",
+            postgresql_using="gin",
+        ),
+        # B-Tree Indexes for catalog filters and sorting
+        Index("ix_challenges_status", "status"),
+        Index("ix_challenges_created_at", "created_at"),
+        Index("ix_challenges_economic_sector", "economic_sector"),
+        Index("ix_challenges_modality", "modality"),
+        Index("ix_challenges_difficulty_level", "difficulty_level"),
+        Index("ix_challenges_status_created_at", "status", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
