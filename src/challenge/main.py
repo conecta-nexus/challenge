@@ -18,6 +18,17 @@ from src.routers.challenges import router as challenges_router
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Initialize and release required infrastructure dependencies."""
+    # Ensure database schema is created on startup if tables do not exist
+    try:
+        from src.core.database import Base, async_engine
+        import src.models.challenge  # noqa: F401
+        import src.models.attachment  # noqa: F401
+        import src.models.closure  # noqa: F401
+        async with async_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as exc:
+        print(f"[challenge-startup] Database auto-creation notice: {exc}")
+
     await initialize_storage()
     try:
         yield
