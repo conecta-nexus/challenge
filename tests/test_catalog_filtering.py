@@ -153,6 +153,24 @@ def test_catalog_param_aliases(mock_db_session):
         assert kwargs["limit"] == 20
 
 
+def test_catalog_comma_separated_skills_query_param(mock_db_session):
+    """Verify comma-separated skills in query param are received properly by filter_catalog."""
+    with patch(
+        "src.repositories.catalog_repository.CatalogRepository.filter_catalog",
+        new=AsyncMock(return_value=([], 0)),
+    ) as mock_filter, patch(
+        "src.repositories.catalog_repository.CatalogRepository.count_active_challenges",
+        new=AsyncMock(return_value=3),
+    ):
+        response = client.get(
+            "/api/v1/challenges/catalog?skill=Python,FastAPI,Docker"
+        )
+        assert response.status_code == 200
+        mock_filter.assert_called_once()
+        _, kwargs = mock_filter.call_args
+        assert kwargs["skill"] == "Python,FastAPI,Docker"
+
+
 def test_catalog_pagination_calculation(mock_db_session):
     """Verify total pages calculation across various total counts."""
     with patch(
