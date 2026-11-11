@@ -1,9 +1,42 @@
-"""Pydantic v2 schemas for Catalog filtering and empty-state representations (HU-10)."""
+"""Public catalog schemas with privacy-safe field projections."""
 
+from datetime import datetime
 from typing import Any, Literal
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.challenge import ChallengeResponse
+
+class PublicCatalogChallengeBase(BaseModel):
+    """Shared public fields that intentionally exclude company contact data."""
+
+    model_config = ConfigDict(from_attributes=True, extra="ignore")
+
+    id: UUID
+    company_id: UUID
+    title: str
+    difficulty_level: str
+    modality: str
+    min_semester: int
+    economic_sector: str
+    required_skills: list[str]
+    knowledge_areas: list[str]
+    created_at: datetime
+
+
+class ChallengeCatalogItemResponse(PublicCatalogChallengeBase):
+    """Privacy-safe discovery card for an open challenge."""
+
+    description_snippet: str
+
+
+class ChallengeCatalogDetailResponse(PublicCatalogChallengeBase):
+    """Privacy-safe public detail projection for an open challenge."""
+
+    description: str
+    business_process: str
+    status: Literal["OPEN"]
+    updated_at: datetime
 
 
 class EmptyStateMetadata(BaseModel):
@@ -37,7 +70,7 @@ class PaginatedCatalogResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    items: list[ChallengeResponse] = Field(
+    items: list[ChallengeCatalogItemResponse] = Field(
         default_factory=list,
         description="List of challenge items matching filter criteria for the current page.",
     )

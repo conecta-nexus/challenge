@@ -8,6 +8,7 @@ from src.core.database import get_db
 from src.repositories.catalog_repository import CatalogRepository
 from src.schemas.catalog import EmptyStateMetadata, PaginatedCatalogResponse
 from src.schemas.challenge import DifficultyLevel, Modality
+from src.services.catalog_service import CatalogService
 
 router = APIRouter(
     prefix="/challenges",
@@ -56,7 +57,7 @@ async def get_catalog(
     # Calculate pagination offset
     skip = (page - 1) * effective_limit
 
-    items, total = await CatalogRepository.filter_catalog(
+    items, total = await CatalogService.query_catalog(
         db,
         q=effective_q,
         economic_sector=effective_sector,
@@ -67,7 +68,6 @@ async def get_catalog(
         knowledge_area=knowledge_area,
         knowledge_areas=knowledge_areas,
         min_semester=effective_semester,
-        status="OPEN",
         skip=skip,
         limit=effective_limit,
     )
