@@ -172,5 +172,6 @@ class ChallengeResponse(BaseModel):
     economic_sector: str
     required_skills: list[str]
     knowledge_areas: list[str]
+    closure_reason: str | None = None
     created_at: datetime
     updated_at: datetime
