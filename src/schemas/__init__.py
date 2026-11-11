@@ -3,6 +3,7 @@
 from src.schemas.catalog import (
     ChallengeCatalogDetailResponse,
     ChallengeCatalogItemResponse,
+    CatalogAttachmentResponse,
     EmptyStateMetadata,
     PaginatedCatalogResponse,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "ChallengeCreate",
     "ChallengeCatalogDetailResponse",
     "ChallengeCatalogItemResponse",
+    "CatalogAttachmentResponse",
     "ChallengeResponse",
     "ChallengeUpdate",
     "EmptyStateMetadata",

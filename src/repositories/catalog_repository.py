@@ -1,9 +1,12 @@
 """Catalog repository for high-performance multi-criteria search and filtering."""
 
 from typing import Any
+from uuid import UUID
+
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.attachment import ChallengeAttachment
 from src.models.challenge import Challenge
 
 
@@ -170,3 +173,32 @@ class CatalogRepository:
         stmt = select(func.count(Challenge.id)).where(Challenge.status == "OPEN")
         result = await db.execute(stmt)
         return result.scalar_one() or 0
+
+    @classmethod
+    async def get_open_challenge(
+        cls,
+        db: AsyncSession,
+        challenge_id: UUID,
+    ) -> Challenge | None:
+        """Return a challenge only when it is publicly visible and open."""
+        stmt = select(Challenge).where(
+            Challenge.id == challenge_id,
+            Challenge.status == "OPEN",
+        )
+        result = await db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    @classmethod
+    async def list_public_attachments(
+        cls,
+        db: AsyncSession,
+        challenge_id: UUID,
+    ) -> list[ChallengeAttachment]:
+        """Return attachment metadata ordered by upload time."""
+        stmt = (
+            select(ChallengeAttachment)
+            .where(ChallengeAttachment.challenge_id == challenge_id)
+            .order_by(ChallengeAttachment.created_at.asc())
+        )
+        result = await db.execute(stmt)
+        return list(result.scalars().all())
