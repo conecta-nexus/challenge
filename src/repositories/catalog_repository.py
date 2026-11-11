@@ -69,23 +69,29 @@ class CatalogRepository:
         if min_semester is not None:
             clauses.append(Challenge.min_semester <= min_semester)
 
-        # JSONB containment for skills
+        # JSONB containment for skills (supports single, list, or comma-separated tokens)
         all_skills: list[str] = []
         if skill and skill.strip():
-            all_skills.append(skill.strip())
+            all_skills.extend([s.strip() for s in skill.split(",") if s.strip()])
         if skills:
-            all_skills.extend([s.strip() for s in skills if s and s.strip()])
+            for item in skills:
+                if item and item.strip():
+                    all_skills.extend([s.strip() for s in item.split(",") if s.strip()])
         if all_skills:
-            clauses.append(Challenge.required_skills.contains(all_skills))
+            unique_skills = list(dict.fromkeys(all_skills))
+            clauses.append(Challenge.required_skills.contains(unique_skills))
 
-        # JSONB containment for knowledge areas
+        # JSONB containment for knowledge areas (supports single, list, or comma-separated tokens)
         all_areas: list[str] = []
         if knowledge_area and knowledge_area.strip():
-            all_areas.append(knowledge_area.strip())
+            all_areas.extend([a.strip() for a in knowledge_area.split(",") if a.strip()])
         if knowledge_areas:
-            all_areas.extend([a.strip() for a in knowledge_areas if a and a.strip()])
+            for item in knowledge_areas:
+                if item and item.strip():
+                    all_areas.extend([a.strip() for a in item.split(",") if a.strip()])
         if all_areas:
-            clauses.append(Challenge.knowledge_areas.contains(all_areas))
+            unique_areas = list(dict.fromkeys(all_areas))
+            clauses.append(Challenge.knowledge_areas.contains(unique_areas))
 
         return clauses
 

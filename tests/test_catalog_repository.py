@@ -85,6 +85,28 @@ def test_build_filter_clauses_jsonb_containment():
     assert "challenges.knowledge_areas @>" in compiled
 
 
+def test_build_filter_clauses_comma_separated_tokens():
+    """Verify comma-separated strings in skill and knowledge_area are parsed into separate tokens."""
+    clauses = CatalogRepository.build_filter_clauses(
+        skill="Python, FastAPI, Docker",
+        skills=["Kubernetes, Terraform", "Git"],
+        knowledge_area="AI, Machine Learning",
+        knowledge_areas=["Data Science, Cloud"],
+        status=None,
+    )
+    assert len(clauses) == 2
+    stmt = select(Challenge).where(*clauses)
+    compiled = str(stmt.compile(dialect=postgresql.dialect()))
+    assert "challenges.required_skills @>" in compiled
+    assert "challenges.knowledge_areas @>" in compiled
+
+
+def test_build_filter_clauses_no_filters():
+    """Verify when status=None and no arguments are provided, empty clause list is returned."""
+    clauses = CatalogRepository.build_filter_clauses(status=None)
+    assert clauses == []
+
+
 def test_build_filter_clauses_ignores_empty_and_whitespace():
     """Verify empty or whitespace strings are safely ignored and do not add redundant clauses."""
     clauses = CatalogRepository.build_filter_clauses(
