@@ -15,7 +15,7 @@
 
 # Repository-specific Code Owners mapping:
 # conecta-nexus/auth:         @AnorakTeam @NelsonConde
-# conecta-nexus/challenge:    @AnorakTeam @NelsonConde
+# conecta-nexus/challenge:    @AnorakTeam @NelsonConde @juandiegosb
 # conecta-nexus/profile:      @AnorakTeam @juandiegosb
 # conecta-nexus/application:  @AnorakTeam @juandiegosb
 # conecta-nexus/moderation:   @juandiegosb @NelsonConde
