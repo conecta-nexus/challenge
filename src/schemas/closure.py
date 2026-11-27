@@ -29,6 +29,29 @@ class ChallengeClosureRequest(BaseModel):
         return stripped
 
 
+class ChallengeSuspensionRequest(BaseModel):
+    """Schema for administrative challenge suspension request (HU-14)."""
+
+    justification: str = Field(
+        ...,
+        min_length=15,
+        description="Mandatory administrative justification for suspension (minimum 15 characters).",
+    )
+
+    @field_validator("justification", mode="before")
+    @classmethod
+    def validate_justification(cls, v: Any, info: ValidationInfo) -> str:
+        """Validate that justification is a non-empty string of at least 15 characters."""
+        if v is None:
+            raise ValueError("justification is required and cannot be null")
+        if not isinstance(v, str):
+            raise ValueError("justification must be a string")
+        stripped = v.strip()
+        if len(stripped) < 15:
+            raise ValueError("justification must be at least 15 characters long")
+        return stripped
+
+
 class CompanyChallengeSummary(BaseModel):
     """Summary metrics of company challenges grouped by lifecycle status."""
 

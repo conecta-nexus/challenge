@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_db
-from src.core.dependencies import get_current_user, require_role
+from src.core.dependencies import get_current_user, require_role, require_scope
 from src.core.security import AuthenticatedUser
 from src.schemas.challenge import (
     ChallengeCreate,
@@ -15,7 +15,11 @@ from src.schemas.challenge import (
     ChallengeStatus,
     ChallengeUpdate,
 )
-from src.schemas.closure import ChallengeClosureRequest, CompanyPortfolioResponse
+from src.schemas.closure import (
+    ChallengeClosureRequest,
+    ChallengeSuspensionRequest,
+    CompanyPortfolioResponse,
+)
 from src.services.challenge_service import ChallengeService
 
 router = APIRouter(
@@ -154,5 +158,69 @@ async def publish_challenge(
         db=db,
         challenge_id=id,
         user_id=current_user.id,
+    )
+    return ChallengeResponse.model_validate(challenge)
+
+
+@router.get(
+    "/internal/{id}",
+    response_model=ChallengeResponse,
+    summary="Internal challenge lookup",
+    description="Retrieve challenge details for internal services or platform admins.",
+)
+async def get_challenge_internal(
+    id: Annotated[UUID, Path(description="Unique challenge UUID")],
+    current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ChallengeResponse:
+    """Retrieve challenge details for internal service verification or moderation."""
+    if not (current_user.has_role("ADMIN") or current_user.has_scope("internal:service")):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Internal service scope or ADMIN role required.",
+        )
+    challenge = await ChallengeService.get_challenge_internal(db=db, challenge_id=id)
+    return ChallengeResponse.model_validate(challenge)
+
+
+@router.post(
+    "/internal/{id}/lock",
+    response_model=ChallengeResponse,
+    summary="Lock challenge to IN_PROGRESS",
+    description="Transition an OPEN challenge to IN_PROGRESS upon candidate acceptance (HU-12 / RB-04).",
+)
+async def lock_challenge_in_progress(
+    id: Annotated[UUID, Path(description="Unique challenge UUID")],
+    current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ChallengeResponse:
+    """Lock an OPEN challenge to IN_PROGRESS for the application match workflow."""
+    challenge = await ChallengeService.lock_challenge_in_progress(
+        db=db,
+        challenge_id=id,
+        caller=current_user,
+    )
+    return ChallengeResponse.model_validate(challenge)
+
+
+@router.post(
+    "/{id}/suspend",
+    response_model=ChallengeResponse,
+    summary="Suspend challenge administratively",
+    description="Administratively cancel a challenge for policy governance (HU-14).",
+)
+async def suspend_challenge(
+    id: Annotated[UUID, Path(description="Unique challenge UUID")],
+    suspension_in: ChallengeSuspensionRequest,
+    current_user: Annotated[AuthenticatedUser, Depends(require_role("ADMIN"))],
+    _scoped: Annotated[AuthenticatedUser, Depends(require_scope("challenge:moderate"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> ChallengeResponse:
+    """Suspend a challenge as an authorized platform administrator."""
+    challenge = await ChallengeService.suspend_challenge(
+        db=db,
+        challenge_id=id,
+        justification=suspension_in.justification,
+        admin_id=current_user.id,
     )
     return ChallengeResponse.model_validate(challenge)

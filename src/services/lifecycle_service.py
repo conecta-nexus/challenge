@@ -35,7 +35,7 @@ class LifecycleService:
     MIN_CLOSURE_REASON_LENGTH = 15
     ALLOWED_TRANSITIONS = {
         "DRAFT": frozenset({"OPEN"}),
-        "OPEN": frozenset({"CLOSED", "CANCELLED"}),
+        "OPEN": frozenset({"IN_PROGRESS", "CLOSED", "CANCELLED"}),
     }
     CLOSURE_STATUSES = frozenset({"CLOSED", "CANCELLED"})
 

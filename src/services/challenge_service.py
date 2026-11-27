@@ -5,6 +5,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.core.security import AuthenticatedUser
 from src.models.challenge import Challenge
 from src.repositories.challenge_repository import ChallengeRepository
 from src.schemas.challenge import ChallengeCreate, ChallengeResponse, ChallengeUpdate
@@ -217,6 +218,88 @@ class ChallengeService:
         return await ChallengeRepository.publish_challenge(
             db=db,
             db_obj=challenge,
+        )
+
+    @staticmethod
+    async def get_challenge_internal(
+        db: AsyncSession,
+        challenge_id: UUID,
+    ) -> Challenge:
+        """Retrieve challenge details for internal microservice verification or admin governance."""
+        challenge = await ChallengeRepository.get_by_id(db, challenge_id)
+        if challenge is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Challenge not found",
+            )
+        return challenge
+
+    @staticmethod
+    async def lock_challenge_in_progress(
+        db: AsyncSession,
+        challenge_id: UUID,
+        caller: AuthenticatedUser,
+    ) -> Challenge:
+        """Atomically lock an OPEN challenge to IN_PROGRESS (HU-12 / RB-04)."""
+        challenge = await ChallengeRepository.get_by_id(db, challenge_id)
+        if challenge is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Challenge not found",
+            )
+
+        is_authorized = (
+            caller.has_role("ADMIN")
+            or caller.has_scope("internal:service")
+            or challenge.company_id == caller.id
+        )
+        if not is_authorized:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Forbidden: Caller is not authorized to lock this challenge",
+            )
+
+        if challenge.status != "OPEN":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Cannot lock challenge in {challenge.status} state; challenge must be OPEN.",
+            )
+
+        return await ChallengeRepository.lock_challenge_in_progress(db=db, db_obj=challenge)
+
+    @staticmethod
+    async def suspend_challenge(
+        db: AsyncSession,
+        challenge_id: UUID,
+        justification: str,
+        admin_id: UUID,
+    ) -> Challenge:
+        """Suspend a challenge administratively by transitioning status to CANCELLED (HU-14)."""
+        challenge = await ChallengeRepository.get_by_id(db, challenge_id)
+        if challenge is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Challenge not found",
+            )
+
+        if challenge.status in ("CLOSED", "CANCELLED"):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Challenge is already in {challenge.status} terminal state.",
+            )
+
+        reason = justification.strip() if justification else ""
+        if len(reason) < 15:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT if hasattr(status, "HTTP_422_UNPROCESSABLE_CONTENT") else 422,
+                detail="Suspension justification must be at least 15 characters long.",
+            )
+
+        return await ChallengeRepository.suspend_challenge(
+            db=db,
+            db_obj=challenge,
+            justification=reason,
+            admin_id=admin_id,
         )
 
     @staticmethod
