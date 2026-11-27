@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.challenge import Challenge
+from src.models.closure import ChallengeClosureLog
 from src.schemas.challenge import ChallengeCreate, ChallengeUpdate
 
 
@@ -161,6 +162,50 @@ class ChallengeRepository:
             The updated Challenge entity.
         """
         db_obj.status = "OPEN"
+        try:
+            await db.commit()
+            await db.refresh(db_obj)
+            return db_obj
+        except Exception:
+            await db.rollback()
+            raise
+
+    @staticmethod
+    async def lock_challenge_in_progress(
+        db: AsyncSession,
+        db_obj: Challenge,
+    ) -> Challenge:
+        """Transition an OPEN challenge to IN_PROGRESS upon candidate acceptance (RB-04)."""
+        db_obj.status = "IN_PROGRESS"
+        try:
+            await db.commit()
+            await db.refresh(db_obj)
+            return db_obj
+        except Exception:
+            await db.rollback()
+            raise
+
+    @staticmethod
+    async def suspend_challenge(
+        db: AsyncSession,
+        db_obj: Challenge,
+        justification: str,
+        admin_id: UUID,
+    ) -> Challenge:
+        """Administratively suspend a challenge by setting status to CANCELLED (HU-14)."""
+        previous_status = db_obj.status
+        db_obj.status = "CANCELLED"
+        db_obj.closure_reason = justification
+        if previous_status == "OPEN" and db_obj.id is not None:
+            db.add(
+                ChallengeClosureLog(
+                    challenge_id=db_obj.id,
+                    closed_by=admin_id,
+                    previous_status="OPEN",
+                    target_status="CANCELLED",
+                    closure_reason=justification,
+                )
+            )
         try:
             await db.commit()
             await db.refresh(db_obj)
